@@ -1,54 +1,56 @@
 package poisson;
 
+import com.maxeler.maxcompiler.v2.managers.BuildConfig;
 import com.maxeler.maxcompiler.v2.managers.BuildConfig.Effort;
 import com.maxeler.maxcompiler.v2.managers.custom.CustomManager;
 import com.maxeler.maxcompiler.v2.managers.custom.blocks.KernelBlock;
-import com.maxeler.maxcompiler.v2.managers.engine_interfaces.CPUTypes;
-import com.maxeler.maxcompiler.v2.managers.engine_interfaces.EngineInterface;
-import com.maxeler.maxcompiler.v2.managers.engine_interfaces.EngineInterface.Direction;
-import com.maxeler.maxcompiler.v2.managers.engine_interfaces.InterfaceParam;
 
 public class PoissonManager extends CustomManager {
-
-	private static final String KERNEL_NAME = "PoissonKernel";
-
+	
+	/**
+	 * Size in the first dimension. Has to be a power of 2 and at least 32.
+	 */
+	private static final int N = 32;
+	/**
+	 * Size in the second dimension.
+	 * If this value is set to one a 1, 1D space is assumed.
+	 * Has to be a power of 2 and at least 32 or be equal to 1.
+	 */
+	private static final int M = 32;
+	/**
+	 * Size in the third dimension
+	 * If this value is set to one a 1, 2D space is assumed.
+	 * Has to be a power of 2 and at least 32 or be equal to 1.
+	 * If M equals 1 this value has to be 1 as well.
+	 */
+	private static final int L = 32;
+	
 	public PoissonManager(PoissonParams params) {
 		super(params);
+
+		this.addMaxFileConstant("N", N);
+		this.addMaxFileConstant("M", M);
+		this.addMaxFileConstant("L", L);
 	}
 
 	public static void main(String[] args) {
 		PoissonParams params = new PoissonParams(args);
 		PoissonManager manager = new PoissonManager(params);
-		PoissonKernel kernel = new PoissonKernel(manager.makeKernelParameters(KERNEL_NAME), params);
+		
+		// Kernels
+		PoissonKernel kernel = new PoissonKernel(manager.makeKernelParameters("PoissonKernel"), params, N, M, L);
 
-		// Wire up the Kernel
 		KernelBlock kb = manager.addKernel(kernel);
-		kb.getInput("fft_in") <== manager.addStreamFromCPU("fft_in");
-		manager.addStreamToCPU("fft_out") <== kb.getOutput("fft_out");
+		kb.getInput("poissonIn") <== manager.addStreamFromCPU("poissonIn");
+		manager.addStreamToCPU("poissonOut") <== kb.getOutput("poissonOut");
 
-		manager.addMaxFileConstant("N", params.getN());
+		BuildConfig buildConfig = manager.getBuildConfig();
+		buildConfig.setBuildEffort(Effort.HIGH);
+		buildConfig.setEnableTimingAnalysis(true);
+		buildConfig.setMPPRCostTableSearchRange(params.getMPPRStartCT(), params.getMPPREndCT());
+		buildConfig.setMPPRParallelism(params.getMPPRThreads());
+		buildConfig.setMPPRRetryNearMissesThreshold(params.getMPPRRetryThreshold());
 
-		// Increase the build effort -- note VERY_HIGH takes much longer than HIGH
-		// for little or no benefit
-		manager.getBuildConfig().setBuildEffort(Effort.HIGH);
-
-		manager.createSLiCinterface(interfaceDefault());
-
-		// Build the design
 		manager.build();
-	}
-
-	private static EngineInterface interfaceDefault() {
-		EngineInterface ei = new EngineInterface("MyInterface");
-
-		InterfaceParam N    = ei.addParam("N", CPUTypes.UINT64);
-
-		ei.setStream("fft_in",CPUTypes.FLOAT, 2*N*N*N*CPUTypes.FLOAT.sizeInBytes() );
-		ei.setStream("fft_out",CPUTypes.FLOAT, 2*N*N*N*CPUTypes.FLOAT.sizeInBytes());
-
-		ei.setTicks(KERNEL_NAME,N*N*N/4);
-
-		ei.ignoreAll(Direction.IN_OUT);
-		return ei;
 	}
 }

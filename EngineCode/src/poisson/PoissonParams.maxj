@@ -5,56 +5,105 @@
 
 package poisson;
 
-import static com.maxeler.maxcompiler.v2.kernelcompiler.types.base.DFETypeFactory.dfeFloat;
-
 import com.maxeler.maxcompiler.v2.build.EngineParameters;
-import com.maxeler.maxcompiler.v2.kernelcompiler.types.base.DFEFix;
-import com.maxeler.maxcompiler.v2.kernelcompiler.types.base.DFEFloat;
-import com.maxeler.maxcompiler.v2.kernelcompiler.types.base.DFEType;
-import com.maxeler.maxcompiler.v2.utils.MathUtils;
 
 public class PoissonParams extends EngineParameters {
 
-	public PoissonParams(String[] args) {
-		super(args);
+	private static final String isBuffGce = "isBuffGce";
+	private static final String isMultiCycleReset = "isMultiCycleReset";
+	private static final String CEReplication = "CEReplication";
+	private static final String maxFileName = "maxFileName";
+	private static final String target = "target";
+	private static final String MPPRRetryThreshold = "MPPRRetryThreshold";
+	private static final String MPPRThreads = "MPPRThreads";
+	private static final String streamFrequency = "streamFrequency";
+	private static final String memFrequency = "memFrequency";
+	private static final String numPipes = "numPipes";
+	private static final String tag = "tag";
+	private static final String hasStreamStatus = "hasStreamStatus";
+	private static final String isPhaseClocks = "isPhaseClocks";
+	private static final String dspFactor = "dspFactor";
+
+	public PoissonParams(String[] argv) {
+		super(argv);
+	}
+
+	public boolean getIsBuffGce() {
+		return getParam(isBuffGce);
+	}
+
+	public boolean getIsMultiCycleReset() {
+		return getParam(isMultiCycleReset);
+	}
+
+	public int getCEReplication() {
+		return getParam(CEReplication);
+	}
+
+	public int getStreamFrequency() {
+		return getParam(streamFrequency);
+	}
+
+	public int getMemFrequency() {
+		return getParam(memFrequency);
+	}
+
+	public int getNumPipes() {
+		return getParam(numPipes);
+	}
+
+	public String getTag() {
+		return getParam(tag);
+	}
+
+	public boolean getHasStreamStatus() {
+		return getParam(hasStreamStatus);
+	}
+
+	public boolean getIsPhaseClocks() {
+		return getParam(isPhaseClocks);
+	}
+
+	public double getDspFactor() {
+		return getParam(dspFactor);
 	}
 
 	@Override
 	protected void declarations() {
-		declareParam("N",         DataType.INT,     64);
-		declareParam("frequency", DataType.INT,     150);
-		declareParam("type",      DataType.DFETYPE, dfeFloat(8,24));
+		/* Standard parameters */
+
+		// naming
+		declareParam(maxFileName, DataType.STRING, "Poisson");
+		declareParam(tag, DataType.STRING, "");
+
+		// build parameters
+		declareParam(target, Target.class, Target.DFE);
+		declareParam(MPPRRetryThreshold, DataType.INT, 500);
+		declareParam(MPPRThreads, DataType.INT, 4);
+		declareParam(CEReplication, DataType.INT, 6);
+		declareParam(isBuffGce, DataType.BOOL, true);
+		declareParam(isMultiCycleReset, DataType.BOOL, true);
+		declareParam(isPhaseClocks, DataType.BOOL, false);
+
+		// common kernel parameters
+		declareParam(streamFrequency, DataType.INT, 200);
+		declareParam(memFrequency, DataType.INT, -1);
+		declareParam(numPipes, DataType.INT, 2);
+		declareParam(dspFactor, DataType.DOUBLE, 0.5);
+
+		// for debugging
+		declareParam(hasStreamStatus, DataType.BOOL, false);
 	}
-
-	public int getN()            { return getParam("N");         }
-	public int getFrequency()    { return getParam("frequency"); }
-	public DFEType getBaseType() { return getParam("type");      }
-
 
 	@Override
 	protected void validate() {
-		if (!MathUtils.isPowerOf2(getN()))
-			throw new IllegalArgumentException("N must be a power of 2.");
-		if (getN() < 32)
-			throw new IllegalArgumentException("N must be at least 32.");
-		if (!(getBaseType() instanceof DFEFloat || getBaseType() instanceof DFEFix))
-			throw new IllegalArgumentException("Base type must be floating or fixed point type.");
+
 	}
 
 	@Override
 	public String getBuildName() {
-		StringBuilder sb = new StringBuilder(getMaxFileName());
-		sb.append("_N" + getN());
-		sb.append("_" + getFrequency() + "MHz");
-
-		DFEType type = getBaseType();
-		if (type instanceof DFEFloat) {
-			sb.append("_float" + type.getTotalBits());
-		} else if (type instanceof DFEFix) {
-			sb.append("_fix" + type.getTotalBits());
-		}
-
-		sb.append("_" + getTarget());
-		return sb.toString();
+		return String.format("%s_%s_%s%s", getMaxFileName(), getDFEModel()
+				.toString(), getTarget().toString(), getTag());
 	}
+
 }

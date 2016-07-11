@@ -5,86 +5,31 @@
 
 package poisson;
 
-import poisson.lib.InvNormalizer;
-import poisson.lib.Normalizer;
+import maxpower.fft.FourierTransform;
 import poisson.lib.PoissonSolver;
 
 import com.maxeler.maxcompiler.v2.kernelcompiler.Kernel;
 import com.maxeler.maxcompiler.v2.kernelcompiler.KernelParameters;
-import com.maxeler.maxcompiler.v2.kernelcompiler.types.base.DFEVar;
+import com.maxeler.maxcompiler.v2.kernelcompiler.types.base.DFEType;
 import com.maxeler.maxcompiler.v2.kernelcompiler.types.composite.DFEComplex;
 import com.maxeler.maxcompiler.v2.kernelcompiler.types.composite.DFEComplexType;
 import com.maxeler.maxcompiler.v2.kernelcompiler.types.composite.DFEVector;
 import com.maxeler.maxcompiler.v2.kernelcompiler.types.composite.DFEVectorType;
 
 public class PoissonKernel extends Kernel {
-	public PoissonKernel(KernelParameters kp, PoissonParams params) {
+	static final DFEType type = dfeFloat(8, 24);
+
+	public PoissonKernel(KernelParameters kp, PoissonParams params, int N, int M, int L) {
 		super(kp);
 
-		DFEComplexType			 	type	   = new DFEComplexType(params.getBaseType());
-		DFEVectorType<DFEComplex> 	vectorType = new DFEVectorType<DFEComplex>(type, 4);
+		DFEComplexType complexType = new DFEComplexType(type);
+		DFEVectorType<DFEComplex> vectorType = new DFEVectorType<DFEComplex>(complexType, FourierTransform.NUM_FFT_PIPES);
 
-		int N = params.getN();
-		DFEVar 				  n 		  = constant.var(params.getN()).cast(dfeUInt(32));
-		DFEVar 				  bound		  = n*n*n/4;
-		DFEVar                inputEnable = control.count.simpleCounter(32) < bound;
-		DFEVector<DFEComplex> in          = io.input("fft_in", vectorType, inputEnable);
+		DFEVector<DFEComplex> in = io.input("poissonIn", vectorType);
 
-		/*
-		//FFT
-		FftFactory4pipes fftFactoryRows = new FftFactory4pipes(this, params.getBaseType(), N, 0, false);
-		FftFactory4pipes fftFactoryCols = new FftFactory4pipes(this, params.getBaseType(), N, 0, false);
-		FftFactory4pipes fftFactoryDeps = new FftFactory4pipes(this, params.getBaseType(), N, 0, false);
+		PoissonSolver poisson = new PoissonSolver(this, in, N, M, L);
 
-		DFEVector<DFEComplex> fftRowsOut = fftFactoryRows.transform(in, 1);
-
-		TransposerMultiPipe transRowsToCols = new TransposerMultiPipe(this, fftRowsOut, N, N*N, true);
-
-		DFEVector<DFEComplex> fftColOutput = fftFactoryCols.transform(transRowsToCols.getOutput(), 1);
-
-		TransposerMultiPipe transColsToDeps = new TransposerMultiPipe(this, fftColOutput, N, N*N, true);
-
-		DFEVector<DFEComplex> fftDepOutput = fftFactoryDeps.transform(transColsToDeps.getOutput(), 1);
-
-		TransposerMultiPipe transDepsToRows = new TransposerMultiPipe(this, fftDepOutput, N, N*N, true);
-		 */
-
-		//Normalizing the output [x][y][z] <-> [N-x][M-y][L-z], for x,y,z not equal 0.
-
-		//Normalizer normalizer = new Normalizer(this,transDepsToRows.getOutput(),N);
-		Normalizer normalizer = new Normalizer(this,in,N);
-		DFEVector<DFEComplex> afterFFT = normalizer.getOutput();
-
-		//Solving Poisson equation in fourier space
-		PoissonSolver poisson = new PoissonSolver(this, afterFFT, N);
-		DFEVector<DFEComplex> solved = poisson.getOutput();
-
-		/*
-		//Inverse FFT
-		FftFactory4pipes invfftFactoryRows = new FftFactory4pipes(this, params.getBaseType(), N, 0, true);
-		FftFactory4pipes invfftFactoryCols = new FftFactory4pipes(this, params.getBaseType(), N, 0, true);
-		FftFactory4pipes invfftFactoryDeps = new FftFactory4pipes(this, params.getBaseType(), N, 0, true);
-
-		DFEVector<DFEComplex> invfftRowsOut = invfftFactoryRows.transform(solved, 1);
-
-		TransposerMultiPipe invtransRowsToCols = new TransposerMultiPipe(this, invfftRowsOut, N, N*N, true);
-
-		DFEVector<DFEComplex> invfftColOutput = invfftFactoryCols.transform(invtransRowsToCols.getOutput(), 1);
-
-		TransposerMultiPipe invtransColsToDeps = new TransposerMultiPipe(this, invfftColOutput, N, N*N, true);
-
-		DFEVector<DFEComplex> invfftDepOutput = invfftFactoryDeps.transform(invtransColsToDeps.getOutput(), 1);
-
-		TransposerMultiPipe invtransDepsToRows = new TransposerMultiPipe(this, invfftDepOutput, N, N*N, true);
-		*/
-
-		//Normalizing the output
-		//InvNormalizer invnormalizer = new InvNormalizer(this,invtransDepsToRows.getOutput(),N);
-		InvNormalizer invnormalizer = new InvNormalizer(this,solved,N);
-
-		//Outputing
-		io.output("fft_out", vectorType) <== invnormalizer.getOutput();
-
+		io.output("poissonOut", vectorType) <== poisson.getOutput();
 	}
 
 

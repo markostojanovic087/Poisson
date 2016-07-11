@@ -27,7 +27,7 @@ public class PoissonSolver extends KernelLib {
 	 * @param input contains stream of inputs
 	 * @param N The size of space dimensions (Must be a power of two)
 	 */
-	public PoissonSolver(KernelLib owner, DFEVector<DFEComplex> in,int N) {
+	public PoissonSolver(KernelLib owner, DFEVector<DFEComplex> in, int N, int M, int L) {
 		super(owner);
 
 		//Defining types
