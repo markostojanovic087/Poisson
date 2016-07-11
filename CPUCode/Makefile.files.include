@@ -2,4 +2,4 @@
 # This file is managed by MaxIDE. Do NOT change.
 #
 HEADERS:= 
-SOURCES:= PoissonCpuCode.c four1.cpp 
+SOURCES:= PoissonCpuCode.c 

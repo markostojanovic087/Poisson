@@ -8,5 +8,7 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry combineaccessrules="false" kind="src" path="/Fft_EngineCode"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/IFft_EngineCode"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/maxpower"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

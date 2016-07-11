@@ -28,6 +28,8 @@
             <classpath>
                 <pathelement path="${maxcompilerdirpath}"/>
                 <pathelement path="/home/demo/Desktop/FFTApp/APP/EngineCode/bin"/>
+                <pathelement path="/home/demo/Desktop/InverseFFTApp/APP/EngineCode/bin"/>
+                <pathelement path="/home/demo/Desktop/maxpower/bin"/>
                 <pathelement path="${EnvClassPath}"/>
             </classpath>
         </maxjcompiler>

@@ -8,6 +8,7 @@
 	<maxelerVersion></maxelerVersion>
 	<maxelerBuildSystemVersion>2</maxelerBuildSystemVersion>
 	<projects>
+		<project>IFft_CPUCode</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
@@ -16,7 +17,7 @@
 			<arguments>
 				<dictionary>
 					<key>?children?</key>
-					<value>?name?=outputEntries\|?children?=?name?=entry\\\\\\\|\\\|\||</value>
+					<value>?name?=outputEntries\||</value>
 				</dictionary>
 				<dictionary>
 					<key>?name?</key>
@@ -85,4 +86,26 @@
 		<nature>org.eclipse.cdt.managedbuilder.core.managedBuildNature</nature>
 		<nature>org.eclipse.cdt.managedbuilder.core.ScannerConfigNature</nature>
 	</natures>
+	<linkedResources>
+		<link>
+			<name>CPUCode</name>
+			<type>2</type>
+			<location>/home/demo/Desktop/InverseFFTApp/APP/CPUCode</location>
+		</link>
+		<link>
+			<name>Desktop</name>
+			<type>2</type>
+			<location>/home/demo/Desktop</location>
+		</link>
+	</linkedResources>
+	<variableList>
+		<variable>
+			<name>IFFT_HOME</name>
+			<value>file:/home/demo/Desktop/InverseFFTApp</value>
+		</variable>
+		<variable>
+			<name>ifftH</name>
+			<value>file:/home/demo/Desktop/InverseFFTApp/APP/CPUCode/ifft.h</value>
+		</variable>
+	</variableList>
 </projectDescription>
