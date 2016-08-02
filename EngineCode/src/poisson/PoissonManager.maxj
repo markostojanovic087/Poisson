@@ -1,0 +1,54 @@
+package poisson;
+
+import com.maxeler.maxcompiler.v2.managers.BuildConfig.Effort;
+import com.maxeler.maxcompiler.v2.managers.custom.CustomManager;
+import com.maxeler.maxcompiler.v2.managers.custom.blocks.KernelBlock;
+import com.maxeler.maxcompiler.v2.managers.engine_interfaces.CPUTypes;
+import com.maxeler.maxcompiler.v2.managers.engine_interfaces.EngineInterface;
+import com.maxeler.maxcompiler.v2.managers.engine_interfaces.EngineInterface.Direction;
+import com.maxeler.maxcompiler.v2.managers.engine_interfaces.InterfaceParam;
+
+public class PoissonManager extends CustomManager {
+
+	private static final String KERNEL_NAME = "PoissonKernel";
+
+	public PoissonManager(PoissonParams params) {
+		super(params);
+	}
+
+	public static void main(String[] args) {
+		PoissonParams params = new PoissonParams(args);
+		PoissonManager manager = new PoissonManager(params);
+		PoissonKernel kernel = new PoissonKernel(manager.makeKernelParameters(KERNEL_NAME), params);
+
+		// Wire up the Kernel
+		KernelBlock kb = manager.addKernel(kernel);
+		kb.getInput("fft_in") <== manager.addStreamFromCPU("fft_in");
+		manager.addStreamToCPU("fft_out") <== kb.getOutput("fft_out");
+
+		manager.addMaxFileConstant("N", params.getN());
+
+		// Increase the build effort -- note VERY_HIGH takes much longer than HIGH
+		// for little or no benefit
+		manager.getBuildConfig().setBuildEffort(Effort.HIGH);
+
+		manager.createSLiCinterface(interfaceDefault());
+
+		// Build the design
+		manager.build();
+	}
+
+	private static EngineInterface interfaceDefault() {
+		EngineInterface ei = new EngineInterface("MyInterface");
+
+		InterfaceParam N    = ei.addParam("N", CPUTypes.UINT64);
+
+		ei.setStream("fft_in",CPUTypes.FLOAT, 2*N*N*N*CPUTypes.FLOAT.sizeInBytes() );
+		ei.setStream("fft_out",CPUTypes.FLOAT, 2*N*N*N*CPUTypes.FLOAT.sizeInBytes());
+
+		ei.setTicks(KERNEL_NAME,N*N*N/4);
+
+		ei.ignoreAll(Direction.IN_OUT);
+		return ei;
+	}
+}

@@ -1,0 +1,107 @@
+package poisson.lib;
+
+import com.maxeler.maxcompiler.v2.kernelcompiler.KernelLib;
+import com.maxeler.maxcompiler.v2.kernelcompiler.stdlib.core.CounterChain;
+import com.maxeler.maxcompiler.v2.kernelcompiler.types.base.DFEType;
+import com.maxeler.maxcompiler.v2.kernelcompiler.types.base.DFEVar;
+import com.maxeler.maxcompiler.v2.kernelcompiler.types.composite.DFEComplex;
+import com.maxeler.maxcompiler.v2.kernelcompiler.types.composite.DFEComplexType;
+import com.maxeler.maxcompiler.v2.kernelcompiler.types.composite.DFEVector;
+import com.maxeler.maxcompiler.v2.kernelcompiler.types.composite.DFEVectorType;
+import com.maxeler.maxcompiler.v2.utils.MathUtils;
+
+/**
+ * Class for normalizing output after FFT. All three dimensions
+ * are equal size.
+ * @author Marko Stojanovic
+ */
+public class Normalizer extends KernelLib{
+	private final DFEVector<DFEComplex> m_output;
+
+	public Normalizer(KernelLib owner, DFEVector<DFEComplex> in,int N) {
+		super(owner);
+
+		int maxOffset = (((N-1)*N+(N-1))*N+N-1 - 1)/4;
+		int ramSize = N*N*N;
+
+		//Defining types
+		DFEComplexType					dataType			= in[0].getType();
+		DFEType							offsetDataType		= dfeInt(MathUtils.bitsToAddress(2*ramSize));
+		DFEVectorType<DFEComplex>		vectorType			= new DFEVectorType<DFEComplex>(dataType, 4);
+		DFEVectorType<DFEVar>			addressType			= new DFEVectorType<DFEVar>(dfeUInt(MathUtils.bitsToAddress(ramSize)), 4);
+		DFEVectorType<DFEVar>			offsetType			= new DFEVectorType<DFEVar>(offsetDataType, 2);
+
+		//Instantiating some variables
+		DFEVector<DFEVar>				offset				= offsetType.newInstance(this);
+		DFEVector<DFEVar> 				original 			= addressType.newInstance(this);
+		DFEVector<DFEVar> 				address 			= addressType.newInstance(this);
+		DFEVar							valF1				= offsetDataType.newInstance(this);
+		DFEVar							valF2				= offsetDataType.newInstance(this);
+
+		//Defining constants
+		DFEVar n = constant.var(dfeUInt(MathUtils.bitsToAddress(ramSize)),N);
+		DFEVar zero = constant.var(dfeUInt(MathUtils.bitsToAddress(ramSize)),0);
+		DFEVar zeroOffset = constant.var(offsetDataType,0);
+		DFEVar boundAddress = constant.var(dfeUInt(MathUtils.bitsToAddress(ramSize)),N*N*N-1);
+
+		//Creating chain of counters necessary for finding good offsets
+		CounterChain chain = control.count.makeCounterChain();
+		DFEVar i = chain.addCounter(N, 1);
+		DFEVar j = chain.addCounter(N, 1);
+		DFEVar k = chain.addCounter(N, 4);
+
+		//Casting counters for larger calculations
+		DFEVar ci = i.cast(n.getType());
+		DFEVar cj = j.cast(n.getType());
+		DFEVar ck = k.cast(n.getType());
+
+		//Calculating the current address of this input data set
+		DFEVar valO = ((ci*n+cj)*n+ck);
+		original[0] <== valO;
+		original[1] <== valO+1;
+		original[2] <== valO+2;
+		original[3] <== valO+3;
+
+		//This is just for precaution
+		DFEVar notDone = original[3] <= boundAddress;
+
+		//Calculating the address from which data should be moved to original address
+		DFEVar partI = ci===zero?ci:n-ci;
+		DFEVar partJ = cj===zero?cj:n-cj;
+		DFEVar partK[] = new DFEVar[4];
+		partK[0] = ck===zero?ck:n-ck;
+		partK[1] = n-ck-1;
+		partK[2] = n-ck-2;
+		partK[3] = n-ck-3;
+
+		address[0] <== (partI*n+partJ)*n+partK[0];
+		address[1] <== (partI*n+partJ)*n+partK[1];
+		address[2] <== (partI*n+partJ)*n+partK[2];
+		address[3] <== (partI*n+partJ)*n+partK[3];
+
+		//Calculating the offset needed to get those data
+		valF1 = (address[0].cast(offsetDataType) - original[0].cast(offsetDataType))/4;
+		offset[0] <== original[0] === zero ? zeroOffset : valF1;
+		valF2 = (address[3].cast(offsetDataType) - original[1].cast(offsetDataType))/4;
+		offset[1] <== valF2;
+
+		//Getting those data
+		DFEVector<DFEComplex> distantData0 = stream.offset(in, offset[0], -maxOffset, +maxOffset) ;
+		DFEVector<DFEComplex> distantData1 = stream.offset(in, offset[1], -maxOffset, +maxOffset) ;
+
+		//Making buffer for output and output.
+		DFEVector<DFEComplex>	bufferOutput = vectorType.newInstance(this);
+		for(int b=0; b<4; b++){
+			DFEComplex dataToWrite = b!=0 ? distantData1[4-b] : distantData0[0];
+			bufferOutput[b] <== dataToWrite;
+		}
+
+		m_output= stream.offset(bufferOutput, ramSize);
+	}
+
+	public DFEVector<DFEComplex> getOutput() {
+		return m_output;
+	}
+
+}
+

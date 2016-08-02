@@ -1,0 +1,60 @@
+//
+// Copyright (c) Maxeler Technologies Ltd.
+// All rights reserved.
+//
+
+package poisson;
+
+import static com.maxeler.maxcompiler.v2.kernelcompiler.types.base.DFETypeFactory.dfeFloat;
+
+import com.maxeler.maxcompiler.v2.build.EngineParameters;
+import com.maxeler.maxcompiler.v2.kernelcompiler.types.base.DFEFix;
+import com.maxeler.maxcompiler.v2.kernelcompiler.types.base.DFEFloat;
+import com.maxeler.maxcompiler.v2.kernelcompiler.types.base.DFEType;
+import com.maxeler.maxcompiler.v2.utils.MathUtils;
+
+public class PoissonParams extends EngineParameters {
+
+	public PoissonParams(String[] args) {
+		super(args);
+	}
+
+	@Override
+	protected void declarations() {
+		declareParam("N",         DataType.INT,     64);
+		declareParam("frequency", DataType.INT,     150);
+		declareParam("type",      DataType.DFETYPE, dfeFloat(8,24));
+	}
+
+	public int getN()            { return getParam("N");         }
+	public int getFrequency()    { return getParam("frequency"); }
+	public DFEType getBaseType() { return getParam("type");      }
+
+
+	@Override
+	protected void validate() {
+		if (!MathUtils.isPowerOf2(getN()))
+			throw new IllegalArgumentException("N must be a power of 2.");
+		if (getN() < 32)
+			throw new IllegalArgumentException("N must be at least 32.");
+		if (!(getBaseType() instanceof DFEFloat || getBaseType() instanceof DFEFix))
+			throw new IllegalArgumentException("Base type must be floating or fixed point type.");
+	}
+
+	@Override
+	public String getBuildName() {
+		StringBuilder sb = new StringBuilder(getMaxFileName());
+		sb.append("_N" + getN());
+		sb.append("_" + getFrequency() + "MHz");
+
+		DFEType type = getBaseType();
+		if (type instanceof DFEFloat) {
+			sb.append("_float" + type.getTotalBits());
+		} else if (type instanceof DFEFix) {
+			sb.append("_fix" + type.getTotalBits());
+		}
+
+		sb.append("_" + getTarget());
+		return sb.toString();
+	}
+}

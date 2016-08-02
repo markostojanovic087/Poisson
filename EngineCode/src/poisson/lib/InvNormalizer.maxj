@@ -1,0 +1,98 @@
+package poisson.lib;
+
+import com.maxeler.maxcompiler.v2.kernelcompiler.KernelLib;
+import com.maxeler.maxcompiler.v2.kernelcompiler.stdlib.core.CounterChain;
+import com.maxeler.maxcompiler.v2.kernelcompiler.types.base.DFEType;
+import com.maxeler.maxcompiler.v2.kernelcompiler.types.base.DFEVar;
+import com.maxeler.maxcompiler.v2.kernelcompiler.types.composite.DFEComplex;
+import com.maxeler.maxcompiler.v2.kernelcompiler.types.composite.DFEComplexType;
+import com.maxeler.maxcompiler.v2.kernelcompiler.types.composite.DFEVector;
+import com.maxeler.maxcompiler.v2.kernelcompiler.types.composite.DFEVectorType;
+import com.maxeler.maxcompiler.v2.utils.MathUtils;
+
+/**
+ * Class for normalizing output after inverse FFT. All three dimensions
+ * are equal size.
+ * @author Marko Stojanovic
+ */
+public class InvNormalizer extends KernelLib{
+	private final DFEVector<DFEComplex> m_output;
+	private final int ramSize;
+
+	public InvNormalizer(KernelLib owner, DFEVector<DFEComplex> in,int N) {
+		super(owner);
+
+		ramSize = N*N*N;
+		int maxOffset = ((N-2)*N+(N-2))*N+N-4;
+
+		//Defining types
+		DFEType							partType			= dfeFloat(8,24);
+		DFEComplexType					dataType			= in[0].getType();
+		DFEType							addressDataType		= dfeUInt(MathUtils.bitsToAddress(ramSize));
+		DFEType							offsetDataType		= dfeInt(MathUtils.bitsToAddress(2*ramSize));
+		DFEVectorType<DFEComplex>		vectorType			= new DFEVectorType<DFEComplex>(dataType, 4);
+
+		//Instantiating some variables
+		DFEVar				offset1				= offsetDataType.newInstance(this);
+		DFEVar				offset2				= offsetDataType.newInstance(this);
+		DFEVar 				original 			= addressDataType.newInstance(this);
+		DFEVar 				address1			= addressDataType.newInstance(this);
+		DFEVar 				address2 			= addressDataType.newInstance(this);
+
+		//Defining constants
+		DFEVar factor = constant.var(partType,Math.sqrt(N*N*N));
+		DFEVar n = constant.var(addressDataType,N);
+
+		//Creating chain of counters necessary for finding good offsets
+		CounterChain chain = control.count.makeCounterChain();
+		DFEVar i = chain.addCounter(N, 1);
+		DFEVar j = chain.addCounter(N, 1);
+		DFEVar k = chain.addCounter(N, 4);
+
+		//Casting counters for larger calculations
+		DFEVar ci = i.cast(addressDataType);
+		DFEVar cj = j.cast(addressDataType);
+		DFEVar ck = k.cast(addressDataType);
+
+		//We get set of data from offset corresponding to address [partI][partJ][partK] and one in front (with modulo) of it
+		DFEVar partI = (ci>>1)<<1 === ci ? ci :mod(ci+2,N);
+		DFEVar partJ = (cj>>1)<<1 === cj ? cj :mod(cj+2,N);
+		DFEVar partK = ck;
+
+		//Calculating the addresses
+		original = ((ci*n+cj)*n+ck);
+		address1 = ((partI*n+partJ)*n+partK);
+		address2 = ((partI*n+partJ)*n+mod(partK+4,N));
+
+		//Calculating the offset needed to get those data
+		offset1 = (address1.cast(offsetDataType) - original.cast(offsetDataType))/4;
+		offset2 = (address2.cast(offsetDataType) - original.cast(offsetDataType))/4;
+
+		//Getting those data
+		DFEVector<DFEComplex> distantData0 = stream.offset(in, offset1, -maxOffset, +maxOffset) ;
+		DFEVector<DFEComplex> distantData1 = stream.offset(in, offset2, -maxOffset, +maxOffset) ;
+
+		//Calculating output
+		DFEVector<DFEComplex>	bufferOutput = vectorType.newInstance(this);
+		bufferOutput[0] <== distantData0[0]/factor;
+		bufferOutput[1] <== distantData0[3]/factor;
+		bufferOutput[2] <== distantData0[2]/factor;
+		bufferOutput[3] <== distantData1[1]/factor;
+
+		m_output= bufferOutput;
+	}
+
+	public DFEVar mod(DFEVar number, int base){
+		DFEType	addressDataType	= dfeUInt(MathUtils.bitsToAddress(ramSize));
+		DFEVar 	num = number.cast(addressDataType);
+		int disp = MathUtils.bitsToAddress(base);
+
+		return num-((num>>disp)<<disp);
+	}
+
+	public DFEVector<DFEComplex> getOutput() {
+		return m_output;
+	}
+
+}
+
