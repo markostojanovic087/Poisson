@@ -12,6 +12,7 @@
 #define MD Poisson_M
 #define LD Poisson_L
 
+
 /**
  * Wrapper for malloc in order to check if malloc returns NULL and exit if this happens.
  *
@@ -25,6 +26,21 @@ void * mallocWrapper(size_t size) {
 		exit(-1);
 	}
 	return pointer;
+}
+
+/**
+ * Generates twiddle factors needed for Poisson solver
+ *
+ * @return pointer to allocated and filled memory
+ */
+double complex * create_twiddles() {
+	double pi = 4 * atan(1.0);
+	double complex* contents = mallocWrapper(ND * sizeof(double complex));;
+	for (int b = 0; b <2*ND; b+=2){
+		contents[b/2]   = cos(pi/ND*b) + I * sin(pi/ND*b);
+	}
+
+	return contents;
 }
 
 /**
@@ -105,30 +121,29 @@ double timesec() {
  *
  * @param values Input samples.
  */
-void poissonCPU(float complex* input, float complex* expected) {
+void poissonCPU(float complex* input, double complex* contents, float complex* expected) {
 	float h=1/(float)ND;
-	double pi = 4 * atan(1.0);
-	float complex W = cos(2.0 * pi / ND) +I*sin(2.0 * pi / ND);
 	float complex Wl=1.0, Wm = 1.0, Wn = 1.0;
 	for(int l=0; l<ND; l++){
+		Wl = contents[l];
 		for (int m = 0; m < ND; m++) {
+			Wm = contents[m];
 			for (int n = 0; n < ND; n++) {
+				Wn = contents[n];
 				float complex denom = Wm + 1.0 / Wm + Wn + 1.0 / Wn + Wl + 1.0 / Wl - 6.0;
 				if (denom != 0.0)
 					expected[(l*ND+m)*ND+n] = input[(l*ND+m)*ND+n] * h * h / denom;
-				Wn *= W;
 			}
-			Wm *= W;
 		}
-		Wl *= W;	}
+	}
 }
 
 /**
  *
  */
-void poissonCPUWrapper(const int size, float complex* inputData, float complex* expectedData) {
+void poissonCPUWrapper(const int size, float complex* inputData, double complex* contents, float complex* expectedData) {
 	//fftCPUWrapper(size, inputData, expectedData);
-	poissonCPU(inputData,expectedData);
+	poissonCPU(inputData,contents,expectedData);
 	//ifftCPUWrapper(size, expectedData, expectedData);
 }
 
@@ -139,9 +154,11 @@ void poissonCPUWrapper(const int size, float complex* inputData, float complex* 
  * @param input Array of samples.
  * @param result Array for the coefficients.
  */
-void poissonDFE(const int size, float complex* input, float complex* result) {
+void poissonDFE(const int size, float complex* input, double complex* contents, float complex* result) {
 	printf("Running on DFE.\n");
-	Poisson(size / 4, input, size * sizeof(float complex), result, size * sizeof(float complex));
+	float h=1/(float)ND;
+	float dh = h * h;
+	Poisson(size / 4, dh, input, size * sizeof(float complex), result, size * sizeof(float complex), (double*)contents);
 }
 
 int main(void)
@@ -150,12 +167,13 @@ int main(void)
 	float complex* inputData = mallocWrapper(size * sizeof(float complex));
 	float complex* expectedData = mallocWrapper(size * sizeof(float complex));
 	float complex* resultData = mallocWrapper(size * sizeof(float complex));
+	double complex* contents = create_twiddles();
 
 	generateTestData(size, inputData);
 
-	poissonCPUWrapper(size, inputData, expectedData);
+	poissonCPUWrapper(size, inputData, contents, expectedData);
 
-	poissonDFE(size, inputData, resultData);
+	poissonDFE(size, inputData, contents, resultData);
 
 	int status = check(size, expectedData, resultData);
 	if(status != 0)
