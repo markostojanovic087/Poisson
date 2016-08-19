@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>PoissonSolving_EngineCode</name>
+	<name>Poisson_EngineCode</name>
 	<comment></comment>
 	<manageMaxCompiler>true</manageMaxCompiler>
 	<manageMaxGenFD>false</manageMaxGenFD>

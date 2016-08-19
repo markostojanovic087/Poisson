@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="PoissonSolving_EngineCode_run_script" default="all" basedir="../../EngineCode">
+<project name="Poisson_EngineCode_run_script" default="all" basedir="../../EngineCode">
     <property environment="env"/>
     <condition property="maxcompilerdirpath" value="${env.MAXCOMPILERJCP}">
         <isset property="env.MAXCOMPILERJCP"/>
@@ -11,6 +11,29 @@
     </condition>
     <condition property="EnvClassPath" value="${env.CLASSPATH}">
         <isset property="env.CLASSPATH"/>
+    </condition>
+    <condition property="maxcompilernetdirpath" value="${env.MAXCOMPILERNETDIR}/lib/MaxCompilerNet.jar">
+        <isset property="env.MAXCOMPILERNETDIR"/>
+    </condition>
+    <path id="maxclasspath">
+        <pathelement path="${env.ANT_MAXELER_INTERNAL_MAXIDE_JARS}"/>
+        <pathelement path="../RunRules/DFE/dist/bin"/>
+        <pathelement path="${maxcompilerdirpath}"/>
+        <pathelement path="${EnvClassPath}"/>
+    </path>
+    <path id="maxnetclasspath">
+        <pathelement path="${maxcompilernetdirpath}"/>
+        <path refid="maxclasspath"/>
+    </path>
+    <property name="maxclasspath" refid="maxclasspath"/>
+    <property name="maxnetclasspath" refid="maxnetclasspath"/>
+    <condition property="finalclasspath" value="${maxnetclasspath}">
+        <isset property="maxcompilernetdirpath"/>
+    </condition>
+    <condition property="finalclasspath" value="${maxclasspath}">
+        <not>
+            <isset property="finalclasspath"/>
+        </not>
     </condition>
     <target name="all" depends="runresult"/>
     <target name="build">
@@ -27,10 +50,7 @@
             <jvmarg value="-Xmx2048m"/>
             <arg line="${args}"/>
             <classpath>
-                <pathelement path="${env.ANT_MAXELER_INTERNAL_MAXIDE_JARS}"/>
-                <pathelement path="../RunRules/DFE/dist/bin"/>
-                <pathelement path="${maxcompilerdirpath}"/>
-                <pathelement path="${EnvClassPath}"/>
+                <pathelement path="${finalclasspath}"/>
             </classpath>
         </java>
         <exec executable="${env.MAXCOMPILERDIR}/lib/MaxIDE/copyBuildResults.sh" newenvironment="false" dir="../RunRules/DFE">

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <maxCompilerManager version="2">
-<enginePart internalEngineSubproject="PoissonSolving_EngineCode" isSrcBin="false" isUseDefaultSelected="false" outputLocation="/PoissonSolving_EngineCode/bin" projectName="PoissonSolving"/>
-<cpuPart internalCpuSubproject="PoissonSolving_CPUCode"/>
+<enginePart internalEngineSubproject="Poisson_EngineCode" isSrcBin="false" isUseDefaultSelected="false" outputLocation="/Poisson_EngineCode/bin" projectName="Poisson"/>
+<cpuPart internalCpuSubproject="Poisson_CPUCode"/>
 <watchedFiles/>
 </maxCompilerManager>

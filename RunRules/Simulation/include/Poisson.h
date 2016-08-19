@@ -23,17 +23,21 @@ extern "C" {
  * \brief Basic static function for the interface 'default'.
  * 
  * \param [in] ticks_PoissonKernel The number of ticks for which kernel "PoissonKernel" will run.
+ * \param [in] inscalar_PoissonKernel_dh Input scalar parameter "PoissonKernel.dh".
  * \param [in] instream_poissonIn Stream "poissonIn".
  * \param [in] instream_size_poissonIn The size of the stream instream_poissonIn in bytes.
  * \param [out] outstream_poissonOut Stream "poissonOut".
  * \param [in] outstream_size_poissonOut The size of the stream outstream_poissonOut in bytes.
+ * \param [in] inmem_PoissonKernel_twiddles Mapped ROM inmem_PoissonKernel_twiddles, should be of size (64 * sizeof(double)).
  */
 void Poisson(
 	uint64_t ticks_PoissonKernel,
+	double inscalar_PoissonKernel_dh,
 	const void *instream_poissonIn,
 	size_t instream_size_poissonIn,
 	void *outstream_poissonOut,
-	size_t outstream_size_poissonOut);
+	size_t outstream_size_poissonOut,
+	const double *inmem_PoissonKernel_twiddles);
 
 /**
  * \brief Basic static non-blocking function for the interface 'default'.
@@ -44,18 +48,22 @@ void Poisson(
  * 
  * 
  * \param [in] ticks_PoissonKernel The number of ticks for which kernel "PoissonKernel" will run.
+ * \param [in] inscalar_PoissonKernel_dh Input scalar parameter "PoissonKernel.dh".
  * \param [in] instream_poissonIn Stream "poissonIn".
  * \param [in] instream_size_poissonIn The size of the stream instream_poissonIn in bytes.
  * \param [out] outstream_poissonOut Stream "poissonOut".
  * \param [in] outstream_size_poissonOut The size of the stream outstream_poissonOut in bytes.
+ * \param [in] inmem_PoissonKernel_twiddles Mapped ROM inmem_PoissonKernel_twiddles, should be of size (64 * sizeof(double)).
  * \return A handle on the execution status, or NULL in case of error.
  */
 max_run_t *Poisson_nonblock(
 	uint64_t ticks_PoissonKernel,
+	double inscalar_PoissonKernel_dh,
 	const void *instream_poissonIn,
 	size_t instream_size_poissonIn,
 	void *outstream_poissonOut,
-	size_t outstream_size_poissonOut);
+	size_t outstream_size_poissonOut,
+	const double *inmem_PoissonKernel_twiddles);
 
 /**
  * \brief Advanced static interface, structure for the engine interface 'default'
@@ -63,10 +71,12 @@ max_run_t *Poisson_nonblock(
  */
 typedef struct { 
 	uint64_t ticks_PoissonKernel; /**<  [in] The number of ticks for which kernel "PoissonKernel" will run. */
+	double inscalar_PoissonKernel_dh; /**<  [in] Input scalar parameter "PoissonKernel.dh". */
 	const void *instream_poissonIn; /**<  [in] Stream "poissonIn". */
 	size_t instream_size_poissonIn; /**<  [in] The size of the stream instream_poissonIn in bytes. */
 	void *outstream_poissonOut; /**<  [out] Stream "poissonOut". */
 	size_t outstream_size_poissonOut; /**<  [in] The size of the stream outstream_poissonOut in bytes. */
+	const double *inmem_PoissonKernel_twiddles; /**<  [in] Mapped ROM inmem_PoissonKernel_twiddles, should be of size (64 * sizeof(double)). */
 } Poisson_actions_t;
 
 /**
