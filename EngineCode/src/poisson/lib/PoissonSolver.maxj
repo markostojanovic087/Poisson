@@ -18,6 +18,8 @@ import com.maxeler.maxcompiler.v2.utils.MathUtils;
  */
 public class PoissonSolver extends KernelLib {
 
+	static final DFEType type = dfeFloat(8, 24);
+
 	private final DFEVector<DFEComplex> m_output;
 
 	/**
@@ -31,7 +33,7 @@ public class PoissonSolver extends KernelLib {
 		super(owner);
 
 		//Defining types
-		DFEType							partType			= dfeFloat(8,24);
+		DFEType							partType			= type;
 		DFEComplexType					dataType			= in[0].getType();
 		DFEVectorType<DFEComplex>		vectorType			= new DFEVectorType<DFEComplex>(dataType, 4);
 		DFEType							romAddressType 		= dfeUInt(MathUtils.bitsToAddress(2*N));
@@ -40,7 +42,7 @@ public class PoissonSolver extends KernelLib {
 		DFEVar zeroV = constant.var(partType,0);
 		DFEVar oneV = constant.var(partType,1);
 		DFEVar sixV = constant.var(partType,6);
-		DFEVar dh = constant.var(partType,1/(double)((N-1)*(N-1)));
+		DFEVar dh = io.scalarInput("dh", partType);
 
 		DFEComplex hc = dataType.newInstance(this);
 		hc.setReal(dh);
@@ -58,14 +60,8 @@ public class PoissonSolver extends KernelLib {
 		six.setReal(sixV);
 		six.setImaginary(zeroV);
 
-		//Creating memory for storing necessary twiddle factors
-		double contents[] = new double[2*N];
-		for (int b = 0; b <2*N; b+=2){
-			contents[b]   = Math.cos(Math.PI/N*b); //2*b/2=b
-			contents[b+1] = Math.sin(Math.PI/N*b);
-		}
-		Memory<DFEVar> twiddles = mem.alloc(dfeFloat(8,24), 2*N);
-		twiddles.setContents(contents);
+		Memory<DFEVar> twiddles = mem.alloc(type, 2*N);
+		twiddles.mapToCPU("twiddles");
 
 		//Creating chain of counters necessary for choosing twiddle factors
 		CounterChain chain = control.count.makeCounterChain();

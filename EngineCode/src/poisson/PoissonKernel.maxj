@@ -5,7 +5,6 @@
 
 package poisson;
 
-import maxpower.fft.FourierTransform;
 import poisson.lib.PoissonSolver;
 
 import com.maxeler.maxcompiler.v2.kernelcompiler.Kernel;
@@ -23,7 +22,7 @@ public class PoissonKernel extends Kernel {
 		super(kp);
 
 		DFEComplexType complexType = new DFEComplexType(type);
-		DFEVectorType<DFEComplex> vectorType = new DFEVectorType<DFEComplex>(complexType, FourierTransform.NUM_FFT_PIPES);
+		DFEVectorType<DFEComplex> vectorType = new DFEVectorType<DFEComplex>(complexType, 4);
 
 		DFEVector<DFEComplex> in = io.input("poissonIn", vectorType);
 
