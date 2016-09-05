@@ -118,7 +118,6 @@ void generateTestData(const int size, float complex *data, int type, char *fileN
 		}
 
 		data[i] = real + I * imag;
-		data[i] = i;
 	}
 }
 
@@ -511,6 +510,45 @@ void poissonDFE(const int size, float complex* input, double complex* contents, 
 	Poisson(size / 4, size / 4, size / 4, dh, input, size * sizeof(float complex), result, size * sizeof(float complex), (double*)contents);
 }
 
+/**
+ * Writes all data to output file.
+ *
+ * @param size Number of samples
+ * @param data Array of samples
+ * @param fileName Name of the output file
+ */
+void writeAllToFile(const int size, const float complex *data, char *fileName){
+	FILE *output = fopen(fileName, "w");
+
+	printf("Writing all output data to file: %s.\n", fileName);
+	for(int i = 0; i < size; i++){
+		fprintf(output,"[%d][%d][%d]\t(%.3f,%.3f)\n",i/(size*size),(i/size)%size,i%size,creal(data[i]),cimag(data[i]));
+	}
+}
+
+/**
+ * Writes plottable data to output file.
+ *
+ * @param size Number of samples
+ * @param data Array of samples
+ * @param fileName Name of the output file
+ */
+void writePlottableToFile(const int size, const float complex *data, char *fileName){
+	FILE *output = fopen(fileName, "w");
+	float h=1/(float)ND;
+
+	printf("Writing plottable data to file: %s.\n", fileName);
+	int i=ND/2;
+	for (int j = 0; j < ND; j++) {
+		double x = j * h;
+		for (int k = 0; k < ND; k++) {
+			double y = k * h;
+			fprintf(output,"%.3f\t%.3f\t%.3f\n",x,y,creal(data[(i*ND+j)*ND+k]));
+		}
+		fprintf(output,"\n");
+	}
+}
+
 int main(void)
 {
 	const int size = ND * MD * LD;
@@ -531,10 +569,15 @@ int main(void)
 	else
 		printf("Test passed!\n");
 
+	writeAllToFile(size, resultData, "output/all_data");
+
+	writePlottableToFile(size, resultData, "output/potential.data");
+
 	printf("Done.\n");
 
 	free(inputData);
 	free(expectedData);
 	free(resultData);
+
 	return status;
 }
