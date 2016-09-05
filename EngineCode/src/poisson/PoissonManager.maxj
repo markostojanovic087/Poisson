@@ -1,12 +1,14 @@
 package poisson;
 
+import com.maxeler.applibrary.fftapp.FftAppEngineParameters;
+import com.maxeler.applibrary.fftapp.FftAppKernel;
 import com.maxeler.maxcompiler.v2.managers.BuildConfig;
 import com.maxeler.maxcompiler.v2.managers.BuildConfig.Effort;
 import com.maxeler.maxcompiler.v2.managers.custom.CustomManager;
 import com.maxeler.maxcompiler.v2.managers.custom.blocks.KernelBlock;
 
 public class PoissonManager extends CustomManager {
-	
+
 	/**
 	 * Size in the first dimension. Has to be a power of 2 and at least 32.
 	 */
@@ -24,7 +26,7 @@ public class PoissonManager extends CustomManager {
 	 * If M equals 1 this value has to be 1 as well.
 	 */
 	private static final int L = 32;
-	
+
 	public PoissonManager(PoissonParams params) {
 		super(params);
 
@@ -34,22 +36,34 @@ public class PoissonManager extends CustomManager {
 	}
 
 	public static void main(String[] args) {
-		PoissonParams params = new PoissonParams(args);
-		PoissonManager manager = new PoissonManager(params);
-		
-		// Kernels
-		PoissonKernel kernel = new PoissonKernel(manager.makeKernelParameters("PoissonKernel"), params, N, M, L);
+		//Params
+		FftAppEngineParameters params1 = new FftAppEngineParameters(args);
+		PoissonParams params2 = new PoissonParams(args);
 
-		KernelBlock kb = manager.addKernel(kernel);
-		kb.getInput("poissonIn") <== manager.addStreamFromCPU("poissonIn");
-		manager.addStreamToCPU("poissonOut") <== kb.getOutput("poissonOut");
+		//Manager
+		PoissonManager manager = new PoissonManager(params2);
+
+		// Kernels
+		FftAppKernel kernel1 = new FftAppKernel(manager.makeKernelParameters("FftAppKernel"), params1, N, M, L);
+		PoissonKernel kernel2 = new PoissonKernel(manager.makeKernelParameters("PoissonKernel"), params2, N, M, L);
+
+		KernelBlock kb1 = manager.addKernel(kernel1);
+		KernelBlock kb2 = manager.addKernel(kernel2);
+
+		/*
+		kb1.getInput("fftIn") <== manager.addStreamFromCPU("poissonIn");
+		manager.addStreamToCPU("poissonOut") <== kb1.getOutput("fftOut");*/
+
+		kb1.getInput("fftIn") <== manager.addStreamFromCPU("poissonIn");
+		kb2.getInput("poissonIn") <== kb1.getOutput("fftOut");
+		manager.addStreamToCPU("poissonOut") <== kb2.getOutput("poissonOut");
 
 		BuildConfig buildConfig = manager.getBuildConfig();
 		buildConfig.setBuildEffort(Effort.HIGH);
 		buildConfig.setEnableTimingAnalysis(true);
-		buildConfig.setMPPRCostTableSearchRange(params.getMPPRStartCT(), params.getMPPREndCT());
-		buildConfig.setMPPRParallelism(params.getMPPRThreads());
-		buildConfig.setMPPRRetryNearMissesThreshold(params.getMPPRRetryThreshold());
+		buildConfig.setMPPRCostTableSearchRange(params2.getMPPRStartCT(), params2.getMPPREndCT());
+		buildConfig.setMPPRParallelism(params2.getMPPRThreads());
+		buildConfig.setMPPRRetryNearMissesThreshold(params2.getMPPRRetryThreshold());
 
 		manager.build();
 	}
