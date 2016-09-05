@@ -20,6 +20,7 @@
         <pathelement path="../RunRules/Simulation/dist/bin"/>
         <pathelement path="${maxcompilerdirpath}"/>
         <pathelement path="/workspace/FftApp/APP/EngineCode/bin"/>
+        <pathelement path="/workspace/InverseFFTApp/APP/EngineCode/bin"/>
         <pathelement path="${EnvClassPath}"/>
     </path>
     <path id="maxnetclasspath">
