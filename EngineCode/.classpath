@@ -7,5 +7,6 @@
 			<attribute name="javadoc_location" value="file:/opt/maxcompiler/docs/MaxCompiler-API/"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry combineaccessrules="false" kind="src" path="/Fft_EngineCode"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

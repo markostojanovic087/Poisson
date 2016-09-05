@@ -31,7 +31,6 @@
 								<option id="gnu.c.compiler.exe.debug.option.debugging.level.1892035090" name="Debug Level" superClass="gnu.c.compiler.exe.debug.option.debugging.level" value="gnu.c.debugging.level.max" valueType="enumerated"/>
 								<option id="gnu.c.compiler.option.include.paths.748980385" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="/opt/maxeler/maxcompiler/include/slic"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/PoissonSolving_CPUCode/IFft_CPUCode}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Poisson_RunRules/Simulation/include}&quot;"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.865185167" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
@@ -54,7 +53,6 @@
 					</folderInfo>
 					<sourceEntries>
 						<entry excluding="CPUCode|Desktop" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
-						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="CPUCode"/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>

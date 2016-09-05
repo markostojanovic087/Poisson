@@ -22,6 +22,7 @@ extern "C" {
 /**
  * \brief Basic static function for the interface 'default'.
  * 
+ * \param [in] ticks_FftAppKernel The number of ticks for which kernel "FftAppKernel" will run.
  * \param [in] ticks_PoissonKernel The number of ticks for which kernel "PoissonKernel" will run.
  * \param [in] inscalar_PoissonKernel_dh Input scalar parameter "PoissonKernel.dh".
  * \param [in] instream_poissonIn Stream "poissonIn".
@@ -31,6 +32,7 @@ extern "C" {
  * \param [in] inmem_PoissonKernel_twiddles Mapped ROM inmem_PoissonKernel_twiddles, should be of size (64 * sizeof(double)).
  */
 void Poisson(
+	uint64_t ticks_FftAppKernel,
 	uint64_t ticks_PoissonKernel,
 	double inscalar_PoissonKernel_dh,
 	const void *instream_poissonIn,
@@ -47,6 +49,7 @@ void Poisson(
  * note that one of these *must* be called, so that associated memory can be released.
  * 
  * 
+ * \param [in] ticks_FftAppKernel The number of ticks for which kernel "FftAppKernel" will run.
  * \param [in] ticks_PoissonKernel The number of ticks for which kernel "PoissonKernel" will run.
  * \param [in] inscalar_PoissonKernel_dh Input scalar parameter "PoissonKernel.dh".
  * \param [in] instream_poissonIn Stream "poissonIn".
@@ -57,6 +60,7 @@ void Poisson(
  * \return A handle on the execution status, or NULL in case of error.
  */
 max_run_t *Poisson_nonblock(
+	uint64_t ticks_FftAppKernel,
 	uint64_t ticks_PoissonKernel,
 	double inscalar_PoissonKernel_dh,
 	const void *instream_poissonIn,
@@ -70,6 +74,7 @@ max_run_t *Poisson_nonblock(
  * 
  */
 typedef struct { 
+	uint64_t ticks_FftAppKernel; /**<  [in] The number of ticks for which kernel "FftAppKernel" will run. */
 	uint64_t ticks_PoissonKernel; /**<  [in] The number of ticks for which kernel "PoissonKernel" will run. */
 	double inscalar_PoissonKernel_dh; /**<  [in] Input scalar parameter "PoissonKernel.dh". */
 	const void *instream_poissonIn; /**<  [in] Stream "poissonIn". */
