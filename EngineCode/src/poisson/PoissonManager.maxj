@@ -2,6 +2,8 @@ package poisson;
 
 import com.maxeler.applibrary.fftapp.FftAppEngineParameters;
 import com.maxeler.applibrary.fftapp.FftAppKernel;
+import com.maxeler.applibrary.fftapp.IFftAppEngineParameters;
+import com.maxeler.applibrary.fftapp.IFftAppKernel;
 import com.maxeler.maxcompiler.v2.managers.BuildConfig;
 import com.maxeler.maxcompiler.v2.managers.BuildConfig.Effort;
 import com.maxeler.maxcompiler.v2.managers.custom.CustomManager;
@@ -39,6 +41,7 @@ public class PoissonManager extends CustomManager {
 		//Params
 		FftAppEngineParameters params1 = new FftAppEngineParameters(args);
 		PoissonParams params2 = new PoissonParams(args);
+		IFftAppEngineParameters params3 = new IFftAppEngineParameters(args);
 
 		//Manager
 		PoissonManager manager = new PoissonManager(params2);
@@ -46,17 +49,21 @@ public class PoissonManager extends CustomManager {
 		// Kernels
 		FftAppKernel kernel1 = new FftAppKernel(manager.makeKernelParameters("FftAppKernel"), params1, N, M, L);
 		PoissonKernel kernel2 = new PoissonKernel(manager.makeKernelParameters("PoissonKernel"), params2, N, M, L);
+		IFftAppKernel kernel3 = new IFftAppKernel(manager.makeKernelParameters("IFftAppKernel"), params3, N, M, L);
 
 		KernelBlock kb1 = manager.addKernel(kernel1);
 		KernelBlock kb2 = manager.addKernel(kernel2);
+		KernelBlock kb3 = manager.addKernel(kernel3);
 
 		/*
 		kb1.getInput("fftIn") <== manager.addStreamFromCPU("poissonIn");
-		manager.addStreamToCPU("poissonOut") <== kb1.getOutput("fftOut");*/
+		kb2.getInput("poissonIn") <== kb1.getOutput("fftOut");
+		manager.addStreamToCPU("poissonOut") <== kb2.getOutput("poissonOut");*/
 
 		kb1.getInput("fftIn") <== manager.addStreamFromCPU("poissonIn");
 		kb2.getInput("poissonIn") <== kb1.getOutput("fftOut");
-		manager.addStreamToCPU("poissonOut") <== kb2.getOutput("poissonOut");
+		kb3.getInput("fftIn") <== kb2.getOutput("poissonOut");
+		manager.addStreamToCPU("poissonOut") <== kb3.getOutput("fftOut");
 
 		BuildConfig buildConfig = manager.getBuildConfig();
 		buildConfig.setBuildEffort(Effort.HIGH);
