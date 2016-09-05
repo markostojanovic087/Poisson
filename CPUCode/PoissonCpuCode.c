@@ -85,21 +85,37 @@ int check(const int size, const float complex *expected, const float complex *re
 }
 
 /**
- * randomly generate data.
+ * Randomly generate data or reads input from file.
  *
- * @param size Number of samples.
- * @param data Pointer to the array used to store the data.
+ * @param size 		Number of samples.
+ * @param data 		Pointer to the array used to store the data.
+ * @param type 		True if input should be read from file
+ * @param fileName 	Name of the input file
  */
-void generateTestData(const int size, float complex *data) {
+void generateTestData(const int size, float complex *data, int type, char *fileName) {
 	srand(time(NULL));
-	for (int i = 0; i < size; i++) {
-		float real = (float)rand()/(float)RAND_MAX * 10;
-		float imag = (float)rand()/(float)RAND_MAX * 10;
-		int signReal = rand() % 2;
-		int signImag = rand() % 2;
 
-		real = signReal == 0 ? real : -real;
-		imag = signImag == 0 ? imag : -imag;
+	FILE *input = NULL;
+	if(type!=0){
+		 input = fopen(fileName,"r");
+	}
+
+	for (int i = 0; i < size; i++) {
+		float real, imag;
+
+		if(type != 0){ //input from file
+			fscanf(input,"%f",&real);
+			fscanf(input,"%f",&imag);
+		}
+		else{ //random input
+			real = (float)rand()/(float)RAND_MAX * 10;
+			imag = (float)rand()/(float)RAND_MAX * 10;
+			int signReal = rand() % 2;
+			int signImag = rand() % 2;
+
+			real = signReal == 0 ? real : -real;
+			imag = signImag == 0 ? imag : -imag;
+		}
 
 		data[i] = real + I * imag;
 		data[i] = i;
@@ -503,7 +519,7 @@ int main(void)
 	float complex* resultData = mallocWrapper(size * sizeof(float complex));
 	double complex* contents = create_twiddles();
 
-	generateTestData(size, inputData);
+	generateTestData(size, inputData, 1, "samples/input_pointCharge");
 
 	poissonCPUWrapper(size, inputData, contents, expectedData);
 
