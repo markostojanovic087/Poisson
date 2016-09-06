@@ -80,13 +80,13 @@ public class PoissonParams extends EngineParameters {
 		declareParam(target, Target.class, Target.DFE);
 		declareParam(MPPRRetryThreshold, DataType.INT, 500);
 		declareParam(MPPRThreads, DataType.INT, 4);
-		declareParam(CEReplication, DataType.INT, 6);
+		declareParam(CEReplication, DataType.INT, 4);
 		declareParam(isBuffGce, DataType.BOOL, true);
 		declareParam(isMultiCycleReset, DataType.BOOL, true);
 		declareParam(isPhaseClocks, DataType.BOOL, false);
 
 		// common kernel parameters
-		declareParam(streamFrequency, DataType.INT, 200);
+		declareParam(streamFrequency, DataType.INT, 150);
 		declareParam(memFrequency, DataType.INT, -1);
 		declareParam(numPipes, DataType.INT, 2);
 		declareParam(dspFactor, DataType.DOUBLE, 0.5);

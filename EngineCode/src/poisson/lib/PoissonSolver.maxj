@@ -98,11 +98,17 @@ public class PoissonSolver extends KernelLib {
 		DFEVector<DFEComplex> denom = vectorType.newInstance(this);
 		DFEVector<DFEComplex> bufferOutput = vectorType.newInstance(this);
 
+		optimization.pushDSPFactor(1);
+		optimization.pushNoPipelining();
+
 		for(int b=0; b<4; b++){
 			denomTry[b] <== Wk[b] + 1/Wk[b] + Wj + 1/Wj + Wi + 1/Wi - six;
 			denom[b] <== denomTry[b].getReal() === zeroV & denomTry[b].getImaginary() === zeroV ? hc : denomTry[b] ;
 			bufferOutput[b] <== in[b]*dh/denom[b];
 		}
+
+		optimization.popNoPipelining();
+		optimization.popDSPFactor();
 
 		m_output= bufferOutput;
 
