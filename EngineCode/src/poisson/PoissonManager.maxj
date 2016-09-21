@@ -55,11 +55,6 @@ public class PoissonManager extends CustomManager {
 		KernelBlock kb2 = manager.addKernel(kernel2);
 		KernelBlock kb3 = manager.addKernel(kernel3);
 
-		/*
-		kb1.getInput("fftIn") <== manager.addStreamFromCPU("poissonIn");
-		kb2.getInput("poissonIn") <== kb1.getOutput("fftOut");
-		manager.addStreamToCPU("poissonOut") <== kb2.getOutput("poissonOut");*/
-
 		kb1.getInput("fftIn") <== manager.addStreamFromCPU("poissonIn");
 		kb2.getInput("poissonIn") <== kb1.getOutput("fftOut");
 		kb3.getInput("fftIn") <== kb2.getOutput("poissonOut");
