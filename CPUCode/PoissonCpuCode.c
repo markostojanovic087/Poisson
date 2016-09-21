@@ -13,6 +13,37 @@
 #define LD Poisson_L
 
 /**
+ * \brief Initialise a timer
+ * \param v The timer (in s)
+ */
+static inline void timer_init(double *v)
+{
+    *v = 0;
+}
+
+/**
+ * \brief Start the timer
+ * \param v The timer (in s)
+ */
+static inline void timer_start(double *v)
+{
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    *v -= tv.tv_sec + tv.tv_usec * 1e-6;
+}
+/**
+ * \brief Stop the timer
+ * \param v The timer (in s)
+ */
+static inline void timer_stop(double *v)
+{
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    *v += tv.tv_sec + tv.tv_usec * 1e-6;
+}
+
+
+/**
  * Wrapper for malloc in order to check if malloc returns NULL and exit if this happens.
  *
  * @param size Size of the memory to allocate.
@@ -491,9 +522,16 @@ void poissonCPU(float complex* input, double complex* contents, float complex* e
  *
  */
 void poissonCPUWrapper(const int size, float complex* inputData, double complex* contents, float complex* expectedData) {
+	double wall_time;
+
+	printf("\nRunning on CPU.\n");
+	timer_init(&wall_time);
+	timer_start(&wall_time);
 	fftCPUWrapper(size, inputData, expectedData);
 	poissonCPU(expectedData,contents, expectedData);
 	ifftCPUWrapper(size, expectedData, expectedData);
+	timer_stop(&wall_time);
+	printf("CPU runtime: %lf\n",wall_time);
 }
 
 /**
@@ -504,10 +542,16 @@ void poissonCPUWrapper(const int size, float complex* inputData, double complex*
  * @param result Array for the coefficients.
  */
 void poissonDFE(const int size, float complex* input, double complex* contents, float complex* result) {
-	printf("Running on DFE.\n");
+    double wall_time;
 	float h=1/(float)ND;
 	float dh = h * h;
+
+	printf("Running on DFE.\n");
+	timer_init(&wall_time);
+	timer_start(&wall_time);
 	Poisson(size / 4, size / 4, size / 4, dh, input, size * sizeof(float complex), result, size * sizeof(float complex), (double*)contents);
+	timer_stop(&wall_time);
+	printf("DFE runtime: %lf\n",wall_time);
 }
 
 /**
