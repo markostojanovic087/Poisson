@@ -123,7 +123,7 @@ int check(const int size, const float complex *expected, const float complex *re
  * @param type 		True if input should be read from file
  * @param fileName 	Name of the input file
  */
-void generateTestData(const int size, float complex *data, int type, char *fileName) {
+void generateTestData(const int numInputs, const int size, float complex *data, int type, char *fileName) {
 	srand(time(NULL));
 
 	FILE *input = NULL;
@@ -131,7 +131,7 @@ void generateTestData(const int size, float complex *data, int type, char *fileN
 		 input = fopen(fileName,"r");
 	}
 
-	for (int i = 0; i < size; i++) {
+	for (int i = 0; i < size*numInputs; i++) {
 		float real, imag;
 
 		if(type != 0){ //input from file
@@ -521,15 +521,23 @@ void poissonCPU(float complex* input, double complex* contents, float complex* e
 /**
  *
  */
-void poissonCPUWrapper(const int size, float complex* inputData, double complex* contents, float complex* expectedData) {
+void poissonCPUWrapper(const int numInputs, const int size, float complex* inputData, double complex* contents, float complex* expectedData) {
 	double wall_time;
+	float complex *inputSet, *expectedSet;
 
 	printf("\nRunning on CPU.\n");
 	timer_init(&wall_time);
 	timer_start(&wall_time);
-	fftCPUWrapper(size, inputData, expectedData);
-	poissonCPU(expectedData,contents, expectedData);
-	ifftCPUWrapper(size, expectedData, expectedData);
+
+	for(int i=0; i<numInputs; i++){
+		inputSet = inputData + size*i;
+		expectedSet = expectedData + size*i;
+
+		fftCPUWrapper(size, inputSet, expectedSet);
+		poissonCPU(expectedSet, contents, expectedSet);
+		ifftCPUWrapper(size, expectedSet, expectedSet);
+	}
+
 	timer_stop(&wall_time);
 	printf("CPU runtime: %lf\n",wall_time);
 }
@@ -541,7 +549,7 @@ void poissonCPUWrapper(const int size, float complex* inputData, double complex*
  * @param input Array of samples.
  * @param result Array for the coefficients.
  */
-void poissonDFE(const int size, float complex* input, double complex* contents, float complex* result) {
+void poissonDFE(const int numInputs, const int size, float complex* input, double complex* contents, float complex* result) {
     double wall_time;
 	float h=1/(float)ND;
 	float dh = h * h;
@@ -549,7 +557,7 @@ void poissonDFE(const int size, float complex* input, double complex* contents, 
 	printf("Running on DFE.\n");
 	timer_init(&wall_time);
 	timer_start(&wall_time);
-	Poisson(size / 4, size / 4, size / 4, dh, input, size * sizeof(float complex), result, size * sizeof(float complex), (double*)contents);
+	Poisson(numInputs * size / 4, numInputs *  size / 4, numInputs *  size / 4, dh, input, numInputs * size * sizeof(float complex), result, numInputs * size * sizeof(float complex), (double*)contents);
 	timer_stop(&wall_time);
 	printf("DFE runtime: %lf\n",wall_time);
 }
@@ -593,29 +601,36 @@ void writePlottableToFile(const int size, const float complex *data, char *fileN
 	}
 }
 
-int main(void)
+int main(int argc, char* argv[])
 {
 	const int size = ND * MD * LD;
-	float complex* inputData = mallocWrapper(size * sizeof(float complex));
-	float complex* expectedData = mallocWrapper(size * sizeof(float complex));
-	float complex* resultData = mallocWrapper(size * sizeof(float complex));
+	int numInputs = atoi(argv[1]);
+	float complex* inputData = mallocWrapper(numInputs * size * sizeof(float complex));
+	float complex* expectedData = mallocWrapper(numInputs * size * sizeof(float complex));
+	float complex* resultData = mallocWrapper(numInputs * size * sizeof(float complex));
 	double complex* contents = create_twiddles();
 
-	generateTestData(size, inputData, 1, "samples/input_pointCharge");
+	generateTestData(numInputs, size, inputData, 0, "");
 
-	poissonCPUWrapper(size, inputData, contents, expectedData);
+	printf("\nInput size: %dx%dx%d\nNumber of inputs: %d\n", ND, ND, ND, numInputs);
 
-	poissonDFE(size, inputData, contents, resultData);
+	if(numInputs<=1000)
+		poissonCPUWrapper(numInputs, size, inputData, contents, expectedData);
 
-	int status = check(size, expectedData, resultData);
-	if(status != 0)
-		printf("Test failed!\n");
-	else
-		printf("Test passed!\n");
+	poissonDFE(numInputs, size, inputData, contents, resultData);
 
-	writeAllToFile(size, resultData, "output/all_data");
+	int status = 0;
+	if(numInputs<=1000){
+		status = check(size, expectedData, resultData);
+		if(status != 0)
+			printf("Test failed!\n");
+		else
+			printf("Test passed!\n");
+	}
+	
+	//writeAllToFile(size, resultData, "output/all_data");
 
-	writePlottableToFile(size, resultData, "output/potential.data");
+	//writePlottableToFile(size, resultData, "output/potential.data");
 
 	printf("Done.\n");
 
