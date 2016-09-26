@@ -75,7 +75,7 @@ void checkArgsNumber(int argc, int bound){
 * @param word		String which needs to be converted to integer.
 * @return			number as a result of conversion.
 */
-int atioWrapper(char *word) {
+int atoiWrapper(char *word) {
 	int i = atoi(word);
 	if (i <= 0) {
 		fprintf(stderr, "First argument must be a number greater than zero.");
@@ -91,7 +91,7 @@ int atioWrapper(char *word) {
 * @param argv			Command line arguments.
 * @param isNotRandom	True if input not randomly generated.
 */
-char * getInputFileName(int argc, char *argv, int isNotRandom){
+char * getInputFileName(int argc, char *argv[], int isNotRandom){
 	if (isNotRandom != 0){
 		checkArgsNumber(argc, 5);
 		return argv[4];
@@ -631,7 +631,11 @@ void writeAllToFile(const int numInputs, const int size, const float complex *da
 	int nameLength = sizeof(fileName);
 
 	for (int j = 0; j < numInputs; j++){
-		int numDigits = floor(log10(abs(j))) + 1;
+		int numDigits;
+		if (j == 0)
+			numDigits = 1;
+		else
+			numDigits = floor(log10(abs(j))) + 1;
 		char * newFileName = malloc(nameLength+numDigits);
 		char * numberStr = malloc(numDigits);
 		sprintf(numberStr, "%d", j);
@@ -656,11 +660,15 @@ void writeAllToFile(const int numInputs, const int size, const float complex *da
  * @param data		Array of samples.
  * @param fileName	Name of the output file.
  */
-void writePlottableToFile(const int numInputs, const int size, const float complex *data, char *fileName){
+void writePlottableToFile(const int numInputs, const float complex *data, char *fileName){
 	int nameLength = sizeof(fileName);
 
 	for (int cur = 0; cur < numInputs; cur++){
-		int numDigits = floor(log10(abs(cur))) + 1;
+		int numDigits;
+		if (cur == 0)
+			numDigits = 1;
+		else
+			numDigits = floor(log10(abs(cur))) + 1;
 		char * newFileName = malloc(nameLength + numDigits);
 		char * numberStr = malloc(numDigits);
 		sprintf(numberStr, "%d", cur);
@@ -717,7 +725,7 @@ int main(int argc, char* argv[])
 	
 	if (wantOutput != 0) {
 		writeAllToFile(numInputs, size, resultData, "output/all_data");
-		writePlottableToFile(numInputs, size, resultData, "output/potential.data");
+		writePlottableToFile(numInputs, resultData, "output/potential.data");
 	}
 
 	printf("Done.\n");
