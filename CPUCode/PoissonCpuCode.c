@@ -13,8 +13,8 @@
 #define LD Poisson_L
 
 /**
- * \brief Initialise a timer
- * \param v The timer (in s)
+ * @brief Initialise a timer.
+ * @param v The timer (in s).
  */
 static inline void timer_init(double *v)
 {
@@ -22,8 +22,8 @@ static inline void timer_init(double *v)
 }
 
 /**
- * \brief Start the timer
- * \param v The timer (in s)
+ * @brief Start the timer.
+ * @param v The timer (in s).
  */
 static inline void timer_start(double *v)
 {
@@ -32,8 +32,8 @@ static inline void timer_start(double *v)
     *v -= tv.tv_sec + tv.tv_usec * 1e-6;
 }
 /**
- * \brief Stop the timer
- * \param v The timer (in s)
+ * @brief Stop the timer.
+ * @param v The timer (in s).
  */
 static inline void timer_stop(double *v)
 {
@@ -42,12 +42,11 @@ static inline void timer_stop(double *v)
     *v += tv.tv_sec + tv.tv_usec * 1e-6;
 }
 
-
 /**
  * Wrapper for malloc in order to check if malloc returns NULL and exit if this happens.
  *
- * @param size Size of the memory to allocate.
- * @return pointer to the allocated memory.
+ * @param size		Size of the memory to allocate.
+ * @return				pointer to the allocated memory.
  */
 void * mallocWrapper(size_t size) {
 	void * pointer = malloc(size);
@@ -59,9 +58,53 @@ void * mallocWrapper(size_t size) {
 }
 
 /**
- * Generates twiddle factors needed for Poisson solver
+* Checking if the number of arguments is smaller than bound value. If so, exiting program.
+* 
+* @param bound Boundary value.
+*/
+void checkArgsNumber(int argc, int bound){
+	if (argc < bound){
+		fprintf(stderr, "Not enough command line arguments");
+		exit(-1);
+	}
+}
+
+/**
+* Wrapper for atoi function. Returns a number if argument is correct and exits if not.
+*
+* @param word		String which needs to be converted to integer.
+* @return			number as a result of conversion.
+*/
+int atioWrapper(char *word) {
+	int i = atoi(word);
+	if (i <= 0) {
+		fprintf(stderr, "First argument must be a number greater than zero.");
+		exit(-1);
+	}
+	return i;
+}
+
+/**
+* Reading inputFileName from command line. Exits program if input not random and not enough command line arguments.
+*
+* @param argc			Number of command line arguments.
+* @param argv			Command line arguments.
+* @param isNotRandom	True if input not randomly generated.
+*/
+char * getInputFileName(int argc, char *argv, int isNotRandom){
+	if (isNotRandom != 0){
+		checkArgsNumber(argc, 5);
+		return argv[4];
+	}
+	else{
+		return "";
+	}
+}
+
+/**
+ * Generates twiddle factors needed for Poisson solver.
  *
- * @return pointer to allocated and filled memory
+ * @return pointer to allocated and filled memory.
  */
 double complex * create_twiddles() {
 	double pi = 4 * atan(1.0);
@@ -75,21 +118,22 @@ double complex * create_twiddles() {
 
 /**
  * Compares the result calculated by the dfe with the result of the cpu version.
- * The signal to noise ratio gets calculated and if it is to low the actual results as well
+ * The signal to noise ratio gets calculated and if it is to low the actual results as well.
  * as the expected results get printed.
  *
- * @param size Number of samples.
- * @param expected Expected result.
- * @param result Actual result.
- * @return 0 if SNR is ok. 1 if not.
+ * @param numOfInputs	Number of data sets.
+ * @param size			Size of one data set.
+ * @param expected		Expected result.
+ * @param result		Actual result.
+ * @return				0 if SNR is ok. 1 if not.
  */
-int check(const int size, const float complex *expected, const float complex *result)
+int check(const int numInputs, const int size, const float complex *expected, const float complex *result)
 {
 	// calculate SNR
 	double S = 0.0;
 	double N = 0.0;
 
-	for (int i = 0; i < size; i++) {
+	for (int i = 0; i < size * numInputs; i++) {
 		float complex res = result[i];
 		float complex exp = expected[i];
 
@@ -103,7 +147,7 @@ int check(const int size, const float complex *expected, const float complex *re
 	printf("SNR: %f\n", SNR);
 	// if result is wrong print everything
 	if (SNR < 69.0) {
-		for (int i = 0; i < size; i++) {
+		for (int i = 0; i < size * numInputs; i++) {
 			float complex res = result[i];
 			float complex exp = expected[i];
 
@@ -118,10 +162,11 @@ int check(const int size, const float complex *expected, const float complex *re
 /**
  * Randomly generate data or reads input from file.
  *
- * @param size 		Number of samples.
+ * @param numInputs Number of data sets.
+ * @param size 		Size of one data set.
  * @param data 		Pointer to the array used to store the data.
- * @param type 		True if input should be read from file
- * @param fileName 	Name of the input file
+ * @param type 		True if input should be read from file.
+ * @param fileName 	Name of the input file.
  */
 void generateTestData(const int numInputs, const int size, float complex *data, int type, char *fileName) {
 	srand(time(NULL));
@@ -150,6 +195,8 @@ void generateTestData(const int numInputs, const int size, float complex *data, 
 
 		data[i] = real + I * imag;
 	}
+
+	printf("\nInput size: %dx%dx%d\nNumber of inputs: %d\n", ND, ND, ND, numInputs);
 }
 
 /**
@@ -260,9 +307,9 @@ void transposeData(const int firstDimension, const int secondDimension, float co
  * Wrapper function for the CPU implementation of the 1D fft.
  * In the 1D case the input data gets copied into a new array in order to do not change the input.
  * In the 2D case the data has to be reordered, transposed and multiple 1D ffts have to be executed.
- * The same principle applies for the 3D case
+ * The same principle applies for the 3D case.
  *
- * @param size number of samples.
+ * @param size Size of one data set.
  * @param inputData Sample array.
  * @param expectedData Array for the coefficients.
  */
@@ -379,10 +426,10 @@ void fftCPUWrapper(const int size, float complex* inputData, float complex* expe
 /**
  * Wrapper function for the CPU implementation of the 1D ifft.
  * In the 1D case the input data gets copied into a new array in order to do not change the input.
- * In the 2D case the data has to be reordered, transposed and multiple 1D ffts have to be executed.
- * The same principle applies for the 3D case
+ * In the 2D case the data has to be reordered, transposed and multiple 1D iffts have to be executed.
+ * The same principle applies for the 3D case.
  *
- * @param size number of samples.
+ * @param size Size of one data set.
  * @param inputData Sample array.
  * @param expectedData Array for the coefficients.
  */
@@ -497,9 +544,11 @@ void ifftCPUWrapper(const int size, float complex* inputData, float complex* exp
 }
 
 /**
- * CPU code to solve Poisson equation.
+ * CPU code to solve Poisson equation in Fourier space.
  *
- * @param values Input samples.
+ * @param input		Input samples.
+ * @param contents	Twiddle factors.
+ * @param expected	Array for placing the result of CPU computation.
  */
 void poissonCPU(float complex* input, double complex* contents, float complex* expected) {
 	float h=1/(float)ND;
@@ -519,7 +568,13 @@ void poissonCPU(float complex* input, double complex* contents, float complex* e
 }
 
 /**
+ * Wrapper funtion of CPU implementation. Used for measuring time and calling poissonCPU for every input set.
  *
+ * @param numInputs		Number of data sets.
+ * @param size			Size of one data set.
+ * @param inputData		Input samples.
+ * @param contents		Twiddle factors.
+ * @param expectedData	Array for placing the result of CPU computation.
  */
 void poissonCPUWrapper(const int numInputs, const int size, float complex* inputData, double complex* contents, float complex* expectedData) {
 	double wall_time;
@@ -545,9 +600,11 @@ void poissonCPUWrapper(const int numInputs, const int size, float complex* input
 /**
  * Code to solve Poisson equation on DFE.
  *
- * @param size Number of samples.
- * @param input Array of samples.
- * @param result Array for the coefficients.
+ * @param numInputs Number of data sets.
+ * @param size		Size of one data set.
+ * @param input		Array of samples.
+ * @param contents	Twiddle factors.
+ * @param result	Array for placing the resut of DFE computation.
  */
 void poissonDFE(const int numInputs, const int size, float complex* input, double complex* contents, float complex* result) {
     double wall_time;
@@ -565,54 +622,84 @@ void poissonDFE(const int numInputs, const int size, float complex* input, doubl
 /**
  * Writes all data to output file.
  *
- * @param size Number of samples
- * @param data Array of samples
- * @param fileName Name of the output file
+ * @param numInputs Number of data sets.
+ * @param size		Size of one data set.
+ * @param data		Array of samples.
+ * @param fileName	Name of the output file.
  */
-void writeAllToFile(const int size, const float complex *data, char *fileName){
-	FILE *output = fopen(fileName, "w");
+void writeAllToFile(const int numInputs, const int size, const float complex *data, char *fileName){
+	int nameLength = sizeof(fileName);
 
-	printf("Writing all output data to file: %s.\n", fileName);
-	for(int i = 0; i < size; i++){
-		fprintf(output,"[%d][%d][%d]\t(%.3f,%.3f)\n",i/(size*size),(i/size)%size,i%size,creal(data[i]),cimag(data[i]));
+	for (int j = 0; j < numInputs; j++){
+		int numDigits = floor(log10(abs(j))) + 1;
+		char * newFileName = malloc(nameLength+numDigits);
+		char * numberStr = malloc(numDigits);
+		itoa(j, numberStr, 10);
+		strcpy(newFileName, fileName);
+		strcat(newFileName, numberStr);
+
+		FILE *output = fopen(newFileName, "w");
+
+		printf("Writing all output[%d] data to file: %s.\n", j, newFileName);
+		int disp = j*size;
+		for (int i = 0; i < size; i++){
+			fprintf(output, "[%d][%d][%d]\t(%.3f,%.3f)\n", i / (size*size), (i / size) % size, i%size, creal(data[disp+i]), cimag(data[disp+i]));
+		}
 	}
 }
 
 /**
  * Writes plottable data to output file.
  *
- * @param size Number of samples
- * @param data Array of samples
- * @param fileName Name of the output file
+ * @param numInputs Number of data sets.
+ * @param size		Size of one data set.
+ * @param data		Array of samples.
+ * @param fileName	Name of the output file.
  */
-void writePlottableToFile(const int size, const float complex *data, char *fileName){
-	FILE *output = fopen(fileName, "w");
-	float h=1/(float)ND;
+void writePlottableToFile(const int numInputs, const int size, const float complex *data, char *fileName){
+	int nameLength = sizeof(fileName);
 
-	printf("Writing plottable data to file: %s.\n", fileName);
-	int i=ND/2;
-	for (int j = 0; j < ND; j++) {
-		double x = j * h;
-		for (int k = 0; k < ND; k++) {
-			double y = k * h;
-			fprintf(output,"%.3f\t%.3f\t%.3f\n",x,y,creal(data[(i*ND+j)*ND+k]));
+	for (int cur = 0; cur < numInputs, cur++){
+		int numDigits = floor(log10(abs(cur))) + 1;
+		char * newFileName = malloc(nameLength + numDigits);
+		char * numberStr = malloc(numDigits);
+		itoa(cur, numberStr, 10);
+		strcpy(newFileName, fileName);
+		strcat(newFileName, numberStr);
+
+		FILE *output = fopen(newFileName, "w");
+		float h = 1 / (float)ND;
+
+		printf("Writing plottable data[%d] to file: %s.\n", cur, newFileName);
+		int i = ND / 2;
+		for (int j = 0; j < ND; j++) {
+			double x = j * h;
+			for (int k = 0; k < ND; k++) {
+				double y = k * h;
+				fprintf(output, "%.3f\t%.3f\t%.3f\n", x, y, creal(data[(i*ND + j)*ND + k]));
+			}
+			fprintf(output, "\n");
 		}
-		fprintf(output,"\n");
 	}
 }
 
 int main(int argc, char* argv[])
 {
 	const int size = ND * MD * LD;
-	int numInputs = atoi(argv[1]);
+	
+	checkArgsNumber(argc, 4);
+
+	const int wantOutput = atoi(argv[1]);
+	const int numInputs = atoiWrapper(argv[2]);
+	const int isNotRandom = atoi(argv[3]);
+	char *inputFileName = getInputFileName(argc, argv, isNotRandom);
+
 	float complex* inputData = mallocWrapper(numInputs * size * sizeof(float complex));
 	float complex* expectedData = mallocWrapper(numInputs * size * sizeof(float complex));
 	float complex* resultData = mallocWrapper(numInputs * size * sizeof(float complex));
 	double complex* contents = create_twiddles();
 
-	generateTestData(numInputs, size, inputData, 0, "");
-
-	printf("\nInput size: %dx%dx%d\nNumber of inputs: %d\n", ND, ND, ND, numInputs);
+	generateTestData(numInputs, size, inputData, isNotRandom, inputFileName);
 
 	if(numInputs<=1000)
 		poissonCPUWrapper(numInputs, size, inputData, contents, expectedData);
@@ -621,16 +708,17 @@ int main(int argc, char* argv[])
 
 	int status = 0;
 	if(numInputs<=1000){
-		status = check(size, expectedData, resultData);
+		status = check(numInputs, size, expectedData, resultData);
 		if(status != 0)
 			printf("Test failed!\n");
 		else
 			printf("Test passed!\n");
 	}
 	
-	//writeAllToFile(size, resultData, "output/all_data");
-
-	//writePlottableToFile(size, resultData, "output/potential.data");
+	if (wantOutput != 0) {
+		writeAllToFile(numInputs, size, resultData, "output/all_data");
+		writePlottableToFile(numInputs, size, resultData, "output/potential.data");
+	}
 
 	printf("Done.\n");
 
