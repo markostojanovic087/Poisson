@@ -634,7 +634,7 @@ void writeAllToFile(const int numInputs, const int size, const float complex *da
 		int numDigits = floor(log10(abs(j))) + 1;
 		char * newFileName = malloc(nameLength+numDigits);
 		char * numberStr = malloc(numDigits);
-		itoa(j, numberStr, 10);
+		sprintf(numberStr, "%d", j);
 		strcpy(newFileName, fileName);
 		strcat(newFileName, numberStr);
 
@@ -659,11 +659,11 @@ void writeAllToFile(const int numInputs, const int size, const float complex *da
 void writePlottableToFile(const int numInputs, const int size, const float complex *data, char *fileName){
 	int nameLength = sizeof(fileName);
 
-	for (int cur = 0; cur < numInputs, cur++){
+	for (int cur = 0; cur < numInputs; cur++){
 		int numDigits = floor(log10(abs(cur))) + 1;
 		char * newFileName = malloc(nameLength + numDigits);
 		char * numberStr = malloc(numDigits);
-		itoa(cur, numberStr, 10);
+		sprintf(numberStr, "%d", cur);
 		strcpy(newFileName, fileName);
 		strcat(newFileName, numberStr);
 
