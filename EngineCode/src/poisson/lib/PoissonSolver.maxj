@@ -29,7 +29,7 @@ public class PoissonSolver extends KernelLib {
 	 * @param input contains stream of inputs
 	 * @param N The size of space dimensions (Must be a power of two)
 	 */
-	public PoissonSolver(KernelLib owner, DFEVector<DFEComplex> in, int N, int M, int L) {
+	public PoissonSolver(KernelLib owner, DFEVector<DFEComplex> in, int N) {
 		super(owner);
 
 		//Defining types
@@ -94,7 +94,6 @@ public class PoissonSolver extends KernelLib {
 		Wi.setImaginary(imagI);
 
 		//Calculating output
-		DFEVector<DFEComplex> denomTry = vectorType.newInstance(this);
 		DFEVector<DFEComplex> denom = vectorType.newInstance(this);
 		DFEVector<DFEComplex> bufferOutput = vectorType.newInstance(this);
 
@@ -102,9 +101,8 @@ public class PoissonSolver extends KernelLib {
 		optimization.pushNoPipelining();
 
 		for(int b=0; b<4; b++){
-			denomTry[b] <== Wk[b] + 1/Wk[b] + Wj + 1/Wj + Wi + 1/Wi - six;
-			denom[b] <== denomTry[b].getReal() === zeroV & denomTry[b].getImaginary() === zeroV ? hc : denomTry[b] ;
-			bufferOutput[b] <== in[b]*dh/denom[b];
+			denom[b] <== Wk[b] + 1/Wk[b] + Wj + 1/Wj + Wi + 1/Wi - six;
+			bufferOutput[b] <== denom[b].getReal() === zeroV & denom[b].getImaginary() === zeroV ? 0 : in[b]*dh/denom[b];
 		}
 
 		optimization.popNoPipelining();

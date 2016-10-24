@@ -18,7 +18,7 @@ import com.maxeler.maxcompiler.v2.kernelcompiler.types.composite.DFEVectorType;
 public class PoissonKernel extends Kernel {
 	static final DFEType type = dfeFloat(8, 24);
 
-	public PoissonKernel(KernelParameters kp, PoissonParams params, int N, int M, int L) {
+	public PoissonKernel(KernelParameters kp, PoissonParams params, int N) {
 		super(kp);
 
 		DFEComplexType complexType = new DFEComplexType(type);
@@ -26,7 +26,7 @@ public class PoissonKernel extends Kernel {
 
 		DFEVector<DFEComplex> in = io.input("poissonIn", vectorType);
 
-		PoissonSolver poisson = new PoissonSolver(this, in, N, M, L);
+		PoissonSolver poisson = new PoissonSolver(this, in, N);
 
 		io.output("poissonOut", vectorType) <== poisson.getOutput();
 	}

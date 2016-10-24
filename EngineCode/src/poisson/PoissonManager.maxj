@@ -15,26 +15,11 @@ public class PoissonManager extends CustomManager {
 	 * Size in the first dimension. Has to be a power of 2 and at least 32.
 	 */
 	private static final int N = 32;
-	/**
-	 * Size in the second dimension.
-	 * If this value is set to one a 1, 1D space is assumed.
-	 * Has to be a power of 2 and at least 32 or be equal to 1.
-	 */
-	private static final int M = 32;
-	/**
-	 * Size in the third dimension
-	 * If this value is set to one a 1, 2D space is assumed.
-	 * Has to be a power of 2 and at least 32 or be equal to 1.
-	 * If M equals 1 this value has to be 1 as well.
-	 */
-	private static final int L = 32;
 
 	public PoissonManager(PoissonParams params) {
 		super(params);
 
 		this.addMaxFileConstant("N", N);
-		this.addMaxFileConstant("M", M);
-		this.addMaxFileConstant("L", L);
 	}
 
 	public static void main(String[] args) {
@@ -47,9 +32,9 @@ public class PoissonManager extends CustomManager {
 		PoissonManager manager = new PoissonManager(params2);
 
 		// Kernels
-		FftAppKernel kernel1 = new FftAppKernel(manager.makeKernelParameters("FftAppKernel"), params1, N, M, L);
-		PoissonKernel kernel2 = new PoissonKernel(manager.makeKernelParameters("PoissonKernel"), params2, N, M, L);
-		IFftAppKernel kernel3 = new IFftAppKernel(manager.makeKernelParameters("IFftAppKernel"), params3, N, M, L);
+		FftAppKernel kernel1 = new FftAppKernel(manager.makeKernelParameters("FftAppKernel"), params1, N, N, N);
+		PoissonKernel kernel2 = new PoissonKernel(manager.makeKernelParameters("PoissonKernel"), params2, N);
+		IFftAppKernel kernel3 = new IFftAppKernel(manager.makeKernelParameters("IFftAppKernel"), params3, N, N, N);
 
 		KernelBlock kb1 = manager.addKernel(kernel1);
 		KernelBlock kb2 = manager.addKernel(kernel2);
