@@ -8,9 +8,10 @@
 #include "MaxSLiCInterface.h"
 #include "Maxfiles.h"
 
+// FFT method for solving Poisson equation can only work with cubic space (equal dim size)
 #define ND Poisson_N
-#define MD Poisson_M
-#define LD Poisson_L
+#define MD Poisson_N
+#define LD Poisson_N
 
 /**
  * @brief Initialise a timer.
@@ -562,6 +563,8 @@ void poissonCPU(float complex* input, double complex* contents, float complex* e
 				float complex denom = Wm + 1.0 / Wm + Wn + 1.0 / Wn + Wl + 1.0 / Wl - 6.0;
 				if (denom != 0.0)
 					expected[(l*ND+m)*ND+n] = input[(l*ND+m)*ND+n] * h * h / denom;
+				else
+					expected[(l*ND+m)*ND+n] = 0;
 			}
 		}
 	}
