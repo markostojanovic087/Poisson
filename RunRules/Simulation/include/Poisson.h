@@ -7,8 +7,6 @@ extern "C" {
 #endif /* __cplusplus */
 
 #define Poisson_PCIE_ALIGNMENT (16)
-#define Poisson_L (32)
-#define Poisson_M (32)
 #define Poisson_N (32)
 
 
